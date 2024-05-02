@@ -17,7 +17,7 @@ spec:
      spec:
        containers:
         - name: mydaemonsetcont
-          image: lerndevops/tomcat:8.5.47
+          image: lerndevops/samplepyapp:v2
           ports:
            - containerPort: 8080
           resources:

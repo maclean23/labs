@@ -5,6 +5,8 @@ metadata:
 data:
   index.html: |
       <H1> Hello ConfigMap </H1>
+      username: dXNlcm5hbWVraW5n
+      password: cGFzc3dvcmRraW5n
 
 ---
 kind: Pod 

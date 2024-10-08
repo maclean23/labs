@@ -94,8 +94,8 @@ export JENKINS_SLAVE_AGENT_PORT=50000
 export JENKINS_VERSION=2.479
 
 # Create Jenkins user and group
-sudo groupadd -g 1000 jenkins
-sudo useradd -m -d /var/jenkins_home -u 1000 -g 1000 -s /bin/bash jenkins
+sudo groupadd -g 1001 jenkins
+sudo useradd -m -d /var/jenkins_home -u 1001 -g 1001 -s /bin/bash jenkins
 
 # Download Jenkins Plugin Manager
 wget https://github.com/jenkinsci/plugin-installation-manager-tool/releases/download/2.13.0/jenkins-plugin-manager-2.13.0.jar

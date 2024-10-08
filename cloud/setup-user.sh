@@ -3,8 +3,11 @@
 set -x  # Enable debugging
 
 now=$(date +%d%b%Y-%H%M)
+USER="devops"
+GROUP="devops"
+passw="today@1234"
 
-exp() {       
+exp() {
 	"$1" <(cat <<-EOF
 	spawn passwd $USER
 	expect "Enter new UNIX password:"
@@ -14,75 +17,53 @@ exp() {
 	expect eof
 	EOF
 	)
-	echo "password for USER $USER updated successfully - adding to sudoers file now"
+	echo "Password for user $USER updated successfully - adding to sudoers file now."
 }
 
 setup_pass() {
-	if [ "$1" == "sles" ]; then
-		if [ ! -f /usr/bin/expect ] && [ ! -f /bin/expect ]; then
-			zypper install -y expect
-			exp "/usr/bin/expect"
-		else
-			exp "/usr/bin/expect"
-		fi
-	elif [ "$1" == "ubuntu" ]; then
-		if [ ! -f /usr/bin/expect ] && [ ! -f /bin/expect ]; then
-			apt-get update
-			apt install -y expect
-			exp "/usr/bin/expect"
-		else
-			exp "/usr/bin/expect"
-		fi
-	elif [ "$1" == "amzn" ]; then
-		if [ ! -f /usr/bin/expect ] && [ ! -f /bin/expect ]; then
-			rpm -Uvh http://epel.mirror.net.in/epel/6/x86_64/epel-release-6-8.noarch.rpm
-			yum install -y expect
-			exp "/usr/bin/expect"
-		else
-			exp "/usr/bin/expect"
-		fi
-	elif [ "$1" == "centos" ]; then
-		if [ ! -f /usr/bin/expect ] && [ ! -f /bin/expect ]; then
-			rpm -Uvh http://epel.mirror.net.in/epel/6/x86_64/epel-release-6-8.noarch.rpm
-			yum install -y expect
-			exp "/bin/expect"
-		else
-			exp "/bin/expect"
-		fi
-	else
-		echo "could not find case $1"
+	if [ ! -f /usr/bin/expect ] && [ ! -f /bin/expect ]; then
+		case "$1" in
+			sles) zypper install -y expect ;;
+			ubuntu) apt-get update && apt install -y expect ;;
+			amzn|centos) 
+				rpm -Uvh http://epel.mirror.net.in/epel/6/x86_64/epel-release-6-8.noarch.rpm
+				yum install -y expect
+				;;
+		esac
 	fi
+	exp "/usr/bin/expect"
 }
 
 update_conf() {
 	sudofile="/etc/sudoers"
 	sshdfile="/etc/ssh/sshd_config"
-	mkdir -p /home/backup
+	backup_dir="/home/backup"
+	mkdir -p "$backup_dir"
+
+	# Update sudoers
 	if [ -f "$sudofile" ]; then
-		cp -p "$sudofile" /home/backup/sudoers-"$now"
-		sa=$(grep "$USER" "$sudofile" | wc -l)
-		if [ $sa -gt 0 ]; then
-			echo "$USER user already present in $sudofile - no changes required"
-			grep "$USER" "$sudofile"
-		else
+		cp -p "$sudofile" "$backup_dir/sudoers-$now"
+		if ! grep -q "$USER" "$sudofile"; then
 			echo "$USER ALL=(ALL) NOPASSWD: ALL" >> "$sudofile"
-			echo "updated the sudoers file successfully"
+			echo "Sudoers file updated successfully."
+		else
+			echo "$USER already exists in sudoers."
 		fi
 	else
-		echo "could not find $sudofile"
+		echo "Sudoers file not found."
 	fi
 
+	# Update sshd_config
 	if [ -f "$sshdfile" ]; then
-		cp -p "$sshdfile" /home/backup/sshd_config-"$now"
+		cp -p "$sshdfile" "$backup_dir/sshd_config-$now"
 		sed -i '/ClientAliveInterval.*0/d' "$sshdfile"
 		echo "ClientAliveInterval 240" >> "$sshdfile"
-		sed -i '/PasswordAuthentication.*no/d' "$sshdfile"
-		sed -i '/PasswordAuthentication.*yes/d' "$sshdfile"
+		sed -i '/PasswordAuthentication.*/d' "$sshdfile"
 		echo "PasswordAuthentication yes" >> "$sshdfile"
-		echo "updated $sshdfile Successfully -- restarting sshd service"
+		echo "SSHD config updated, restarting SSHD."
 		service sshd restart
 	else
-		echo "could not find $sshdfile"
+		echo "SSHD config not found."
 	fi
 }
 
@@ -104,16 +85,31 @@ install_tools() {
 		sudo apt-get install -y git
 
 		# Install Terraform
-		sudo apt-get install -y gnupg software-properties-common curl
-		curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
-		sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
-		sudo apt-get update -y
-		sudo apt-get install -y terraform
+		if [ "$osname" == "ubuntu" ]; then
+			sudo curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
+			sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
+			sudo apt-get update
+			sudo apt-get install -y terraform
+		fi
+
+		# Install Maven
+		MAVEN_VERSION=3.8.6
+		sudo wget https://downloads.apache.org/maven/maven-3/$MAVEN_VERSION/binaries/apache-maven-$MAVEN_VERSION-bin.tar.gz -P /tmp
+		sudo tar -xzf /tmp/apache-maven-$MAVEN_VERSION-bin.tar.gz -C /opt/
+		sudo mv /opt/apache-maven-$MAVEN_VERSION /opt/maven
 
 		# Install kubectl
 		curl -LO "https://storage.googleapis.com/kubernetes-release/release/v1.23.6/bin/linux/amd64/kubectl"
 		sudo chmod +x ./kubectl
 		sudo mv ./kubectl /usr/local/bin/kubectl
+
+		# Install Ansible
+		if [ "$osname" == "ubuntu" ]; then
+			sudo apt-get install -y software-properties-common
+			sudo apt-add-repository --yes --update ppa:ansible/ansible
+			sudo apt-get install -y ansible
+			echo "Ansible installed successfully."
+		fi
 
 	} || {
 		echo "An error occurred during the installation process."
@@ -123,28 +119,23 @@ install_tools() {
 
 ############### MAIN ###################
 
-USER="devops"
-GROUP="devops"
-passw="today@1234"
-
 if id -u "$USER" &>/dev/null; then 
-	echo "devops user exists no action required.."
+	echo "$USER user exists, no action required."
 	exit 0
 else
-	echo "devops user missing, continue to create it.."
+	echo "$USER user missing, creating user..."
 fi
 
 if [ -f /etc/os-release ]; then
-	osname=$(grep ID /etc/os-release | egrep -v 'VERSION|LIKE|VARIANT|PLATFORM' | cut -d'=' -f2 | sed -e 's/"//' -e 's/"//')
-	echo "$osname"
+	osname=$(grep ID /etc/os-release | egrep -v 'VERSION|LIKE|VARIANT|PLATFORM' | cut -d'=' -f2 | tr -d '"')
 else
-	echo "cannot locate /etc/os-release - unable find the osname"
+	echo "Cannot locate /etc/os-release - unable to find the OS name."
 	exit 8
 fi
 
 case "$osname" in
 	sles|amzn|ubuntu|centos)
-		userdel -r "$USER" 
+		userdel -r "$USER"
 		groupdel "$GROUP"
 		sleep 3
 		groupadd "$GROUP"
@@ -154,7 +145,7 @@ case "$osname" in
 		install_tools
 		;;
 	*)
-		echo "could not determine the correct osname -- found $osname"
+		echo "Could not determine the correct OS name -- found $osname."
 		;;
 esac
 

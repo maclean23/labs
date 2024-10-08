@@ -74,7 +74,7 @@ install_tools() {
 		sudo apt-get upgrade -y
 
 		# Install Java
-                apt install openjdk-17-jre-headless -y
+                apt install -y openjdk-17-jre-headless 
 
                 
 
@@ -86,6 +86,10 @@ install_tools() {
 		# Install Jenkins through internet download and execute file to manifest app
 		wget https://repo.jenkins-ci.org/public/org/jenkins-ci/main/jenkins-war/2.479/jenkins-war-2.479.war 
                 java -jar jenkins-war-2.479.war
+		export JENKINS_HOME=/var/jenkins_home
+                export JENKINS_SLAVE_AGENT_PORT=50000
+                export JENKINS_VERSION=2.479
+
 
 
 		# Install Git

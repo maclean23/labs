@@ -177,11 +177,11 @@ sudo systemctl status jenkins
                 sudo chmod 755 /tmp/installTerraform.sh
                 sudo bash /tmp/installTerraform.sh
 
-		# Install Maven
-		MAVEN_VERSION=3.8.6
-		sudo wget https://downloads.apache.org/maven/maven-3/$MAVEN_VERSION/binaries/apache-maven-$MAVEN_VERSION-bin.tar.gz -P /tmp
-		sudo tar -xzf /tmp/apache-maven-$MAVEN_VERSION-bin.tar.gz -C /opt/
-		sudo mv /opt/apache-maven-$MAVEN_VERSION /opt/maven
+		# Install Maven Latest
+                sudo apt update
+		sudo apt install maven -y
+                mvn -version
+		
 
 		# Install kubectl
 		curl -LO "https://storage.googleapis.com/kubernetes-release/release/v1.23.6/bin/linux/amd64/kubectl"

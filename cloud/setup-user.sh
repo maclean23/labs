@@ -111,7 +111,7 @@ After=network.target
 User=jenkins
 Group=jenkins
 Environment="JENKINS_HOME=/var/jenkins_home"
-ExecStart=/usr/bin/java -jar /path/to/jenkins-war-2.479.war
+ExecStart=/usr/bin/java -jar /jenkins-war-2.479.war
 SuccessExitStatus=143
 Restart=on-failure
 RestartSec=10

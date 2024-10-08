@@ -83,16 +83,53 @@ install_tools() {
 		sudo systemctl start docker
 		sudo systemctl enable docker
 
-		# Install Jenkins through internet download and execute file to manifest app
-		wget https://repo.jenkins-ci.org/public/org/jenkins-ci/main/jenkins-war/2.479/jenkins-war-2.479.war 
-                java -jar jenkins-war-2.479.war
-		export JENKINS_HOME=/var/jenkins_home
-                export JENKINS_SLAVE_AGENT_PORT=50000
-                export JENKINS_VERSION=2.479
-		sudo groupadd -g 1000 jenkins
-                sudo useradd -m -d /var/jenkins_home -u 1000 -g 1000 -s /bin/bash jenkins
-		wget https://github.com/jenkinsci/plugin-installation-manager-tool/releases/download/2.13.0/jenkins-plugin-manager-2.13.0.jar
 
+# Download Jenkins WAR file
+wget https://repo.jenkins-ci.org/public/org/jenkins-ci/main/jenkins-war/2.479/jenkins-war-2.479.war
+
+# Set up environment variables
+export JENKINS_HOME=/var/jenkins_home
+export JENKINS_SLAVE_AGENT_PORT=50000
+export JENKINS_VERSION=2.479
+
+# Create Jenkins user and group
+sudo groupadd -g 1000 jenkins
+sudo useradd -m -d /var/jenkins_home -u 1000 -g 1000 -s /bin/bash jenkins
+
+# Download Jenkins Plugin Manager
+wget https://github.com/jenkinsci/plugin-installation-manager-tool/releases/download/2.13.0/jenkins-plugin-manager-2.13.0.jar
+
+# Create Jenkins systemd service file
+sudo bash -c 'cat > /etc/systemd/system/jenkins.service <<EOF
+[Unit]
+Description=Jenkins Continuous Integration Server
+Documentation=https://jenkins.io/doc/
+After=network.target
+
+[Service]
+User=jenkins
+Group=jenkins
+Environment="JENKINS_HOME=/var/jenkins_home"
+ExecStart=/usr/bin/java -jar /path/to/jenkins-war-2.479.war
+SuccessExitStatus=143
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+EOF'
+
+# Reload systemd to recognize the new Jenkins service
+sudo systemctl daemon-reload
+
+# Enable Jenkins service to start on boot
+sudo systemctl enable jenkins
+
+# Start Jenkins service
+sudo systemctl start jenkins
+
+# Verify the status of Jenkins service
+sudo systemctl status jenkins
 
 
 
@@ -100,12 +137,9 @@ install_tools() {
 		sudo apt-get install -y git
 
 		# Install Terraform
-		if [ "$osname" == "ubuntu" ]; then
-			sudo curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
-			sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
-			sudo apt-get update
-			sudo apt-get install -y terraform
-		fi
+		sudo wget https://raw.githubusercontent.com/lerndevops/labs/master/scripts/installTerraform.sh -P /tmp
+                sudo chmod 755 /tmp/installTerraform.sh
+                sudo bash /tmp/installTerraform.sh
 
 		# Install Maven
 		MAVEN_VERSION=3.8.6

@@ -118,12 +118,12 @@ export JENKINS_VERSION=2.479
 
 # Check if Jenkins group exists, if not create it
 if ! getent group jenkins > /dev/null; then
-    sudo groupadd -g 1001 jenkins
+    sudo groupadd -g 1112 jenkins
 fi
 
 # Check if Jenkins user exists, if not create it
 if ! id -u jenkins > /dev/null 2>&1; then
-    sudo useradd -m -d /var/jenkins_home -u 1001 -g 1001 -s /bin/bash jenkins
+    sudo useradd -m -d /var/jenkins_home -u 1112 -g 1112 -s /bin/bash jenkins
 fi
 
 # Ensure correct permissions on JENKINS_HOME directory

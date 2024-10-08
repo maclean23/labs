@@ -84,6 +84,7 @@ install_tools() {
 		sudo systemctl enable docker
 
 
+
 # Download Jenkins WAR file
 wget https://repo.jenkins-ci.org/public/org/jenkins-ci/main/jenkins-war/2.479/jenkins-war-2.479.war
 
@@ -118,6 +119,10 @@ RestartSec=10
 [Install]
 WantedBy=multi-user.target
 EOF'
+
+# Adjust permissions for Jenkins home directory
+sudo chown -R jenkins:jenkins /var/jenkins_home
+sudo chown jenkins:jenkins /path/to/jenkins-war-2.479.war
 
 # Reload systemd to recognize the new Jenkins service
 sudo systemctl daemon-reload

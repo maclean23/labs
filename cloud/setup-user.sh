@@ -92,24 +92,23 @@ install_tools() {
 		sudo apt-get update -y
 		sudo apt-get upgrade -y
 
-		# Install Jenkins
-		wget -q -O - https://pkg.jenkins.io/debian/jenkins.io.key | sudo apt-key add -
-		sudo sh -c 'echo deb http://pkg.jenkins.io/debian-stable binary/ > /etc/apt/sources.list.d/jenkins.list'
-		sudo apt-get update -y
-		sudo apt-get install openjdk-11-jdk -y
-		sudo apt-get install jenkins -y
-		sudo systemctl enable jenkins
-		sudo systemctl start jenkins
+		# Install Docker
+		sudo apt-get install -y docker.io
+		sudo systemctl start docker
+		sudo systemctl enable docker
+
+		# Run Jenkins as a Docker container
+		sudo docker run -d -p 8080:8080 --name jenkins jenkins/jenkins:lts
 
 		# Install Git
-		sudo apt-get install git -y
+		sudo apt-get install -y git
 
 		# Install Terraform
 		sudo apt-get install -y gnupg software-properties-common curl
 		curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
 		sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
 		sudo apt-get update -y
-		sudo apt-get install terraform -y
+		sudo apt-get install -y terraform
 
 		# Install kubectl
 		curl -LO "https://storage.googleapis.com/kubernetes-release/release/v1.23.6/bin/linux/amd64/kubectl"

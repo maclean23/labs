@@ -73,13 +73,20 @@ install_tools() {
 		sudo apt-get update -y
 		sudo apt-get upgrade -y
 
+		# Install Java
+                apt install openjdk-17-jre-headless -y
+
+                
+
 		# Install Docker
 		sudo apt-get install -y docker.io
 		sudo systemctl start docker
 		sudo systemctl enable docker
 
-		# Run Jenkins as a Docker container
-		sudo docker run -d -p 8080:8080 --name jenkins jenkins/jenkins:lts
+		# Install Jenkins through internet download and execute file to manifest app
+		wget https://repo.jenkins-ci.org/public/org/jenkins-ci/main/jenkins-war/2.479/jenkins-war-2.479.war 
+                java -jar jenkins-war-2.479.war
+
 
 		# Install Git
 		sudo apt-get install -y git

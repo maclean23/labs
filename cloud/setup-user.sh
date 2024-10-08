@@ -88,6 +88,13 @@ install_tools() {
 # Download Jenkins WAR file
 wget https://repo.jenkins-ci.org/public/org/jenkins-ci/main/jenkins-war/2.479/jenkins-war-2.479.war
 
+# move 
+sudo mkdir -p /opt/jenkins
+sudo mv jenkins-war-2.479.war /opt/jenkins/
+sudo chown -R jenkins:jenkins /opt/jenkins
+sudo chmod 755 /opt/jenkins/jenkins-war-2.479.war
+
+
 # Set up environment variables
 export JENKINS_HOME=/var/jenkins_home
 export JENKINS_SLAVE_AGENT_PORT=50000
@@ -111,7 +118,7 @@ After=network.target
 User=jenkins
 Group=jenkins
 Environment="JENKINS_HOME=/var/jenkins_home"
-ExecStart=/usr/bin/java -jar /jenkins-war-2.479.war
+ExecStart=/usr/bin/java -jar /opt/jenkins/jenkins-war-2.479.war
 SuccessExitStatus=143
 Restart=on-failure
 RestartSec=10
@@ -119,10 +126,6 @@ RestartSec=10
 [Install]
 WantedBy=multi-user.target
 EOF'
-
-# Adjust permissions for Jenkins home directory
-sudo chown -R jenkins:jenkins /var/jenkins_home
-sudo chown jenkins:jenkins /path/to/jenkins-war-2.479.war
 
 # Reload systemd to recognize the new Jenkins service
 sudo systemctl daemon-reload
